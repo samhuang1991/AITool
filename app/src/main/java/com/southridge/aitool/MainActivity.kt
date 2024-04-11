@@ -15,8 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.databinding.DataBindingUtil.setContentView
 import com.southridge.aitool.databinding.ActivityMainBinding
+import com.southridge.aitool.styletransfer.StyleTransferActivity
 import com.southridge.aitool.superresolution.SuperResolutionActivity
 import com.southridge.aitool.ui.theme.AIToolTheme
+import java.io.InputStream
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
@@ -31,6 +33,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         handleListener()
     }
 
+
     private fun handleListener() {
         binding.btnDiffusion.setOnClickListener {
             // startActivity(Intent(this, DiffusionActivity::class.java))
@@ -44,9 +47,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             // startActivity(Intent(this, LoRAWeightActivity::class.java))
         }
 
-        binding.superResolution.setOnClickListener {
-             startActivity(Intent(this,SuperResolutionActivity::class.java))
+        binding.btnSuperResolution.setOnClickListener {
+            startActivity(Intent(this,SuperResolutionActivity::class.java))
+        }
 
+        binding.styleTransfer.setOnClickListener {
+             startActivity(Intent(this,StyleTransferActivity::class.java))
         }
     }
+
+
+
 }

@@ -74,10 +74,16 @@
             android:textSize="20sp" />
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/superResolution"
+            android:id="@+id/btnSuperResolution"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="超分" />
+            android:text="超 分" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/styleTransfer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="风格转化" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
