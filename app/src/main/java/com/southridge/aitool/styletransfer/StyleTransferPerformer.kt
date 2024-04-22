@@ -14,6 +14,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.Collections
 import kotlin.math.abs
+import kotlin.math.log
 
 internal data class Result(
     var outputBitmap: Bitmap? = null
@@ -111,9 +112,18 @@ internal class StyleTransferPerformer {
 
         for (i in 0 until height) {
             for (j in 0 until width) {
-                val r = abs(data[0][0][i][j] * 1).toInt()
-                val g = abs(data[0][1][i][j] * 1).toInt()
-                val b = abs(data[0][2][i][j] * 1).toInt()
+                var r = abs(data[0][0][i][j] * 1).toInt()
+                var g = abs(data[0][1][i][j] * 1).toInt()
+                var b = abs(data[0][2][i][j] * 1).toInt()
+                if (r>255 ){
+                    r = 255
+                }
+                if (g>255){
+                    g = 255
+                }
+                if (b>255){
+                    b = 255
+                }
                 bitmap.setPixel(j, i, Color.rgb(r, g, b))
 //                Log.i("output: ", "r = $r , g = $g , b = $b")
             }
