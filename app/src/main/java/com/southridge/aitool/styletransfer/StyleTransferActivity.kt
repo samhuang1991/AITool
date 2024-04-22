@@ -6,6 +6,8 @@ import ai.onnxruntime.extensions.OrtxPackage
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
+import android.widget.AdapterView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -31,6 +33,7 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
     private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
     private lateinit var ortSession: OrtSession
+    private var modelID: Int = R.raw.mosaic_8
     override fun inflateBinding(inflater: LayoutInflater): ActivityTransferStyleBinding {
         return ActivityTransferStyleBinding.inflate(inflater)
     }
@@ -55,6 +58,17 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
             }
         }
 
+        binding.styleSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                modelID = styleFiles[position]
+                ortSession = ortEnv.createSession(readModel(), sessionOptions)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                modelID = styleFiles[0]
+            }
+        }
+
     }
 
     private fun performStyleTransfer() {
@@ -64,13 +78,14 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     }
 
     private fun readModel(): ByteArray {
-        val modelID = R.raw.mosaic
+//        val modelID = R.raw.rain_princess_8
         return resources.openRawResource(modelID).readBytes()
     }
 
 
     private fun readInputImage(): InputStream {
-        return assets.open("test_superresolution.png")
+//        return assets.open("test_superresolution.png")
+        return assets.open("gorilla.png")
     }
 
     private fun updateUI(result: Result) {
@@ -85,4 +100,18 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     companion object {
         const val TAG = "ORTSuperResolution"
     }
+
+    private val styleFiles = intArrayOf(
+        R.raw.mosaic_8,
+        R.raw.mosaic_9,
+        R.raw.udnie_8,
+        R.raw.udnie_9,
+        R.raw.candy_8,
+        R.raw.candy_9,
+        R.raw.rain_princess_8,
+        R.raw.rain_princess_9,
+        R.raw.pointilism_8,
+        R.raw.pointilism_9,
+        R.raw.animeganv3_hayao_36
+    )
 }
