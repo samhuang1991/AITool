@@ -155,7 +155,8 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
     private fun performStyleTransfer() {
         var styleTransferPerformer = StyleTransferPerformer()
-        var result = styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
+//        var result = styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
+        var result = styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
         updateUI(result);
     }
 
@@ -195,6 +196,7 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         R.raw.rain_princess_9,
         R.raw.pointilism_8,
         R.raw.pointilism_9,
-        R.raw.animeganv3_hayao_36
+        R.raw.animeganv3_hayao_36,
+        R.raw.shinkai_53
     )
 }
