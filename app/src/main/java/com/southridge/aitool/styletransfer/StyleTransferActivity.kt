@@ -169,7 +169,8 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     private fun readInputImage(): InputStream {
 //        return assets.open("test_superresolution.png")
 //        return assets.open("gorilla.png")
-        return assets.open("baozi.jpg")
+//        return assets.open("me.jpg")
+        return assets.open("tree.jpg")
     }
 
     private fun updateUI(result: Result) {

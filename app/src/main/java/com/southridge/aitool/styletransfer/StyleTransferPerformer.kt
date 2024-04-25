@@ -112,7 +112,7 @@ internal class StyleTransferPerformer {
         )
         inputTensor.use {
             // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap("generator_input:0", inputTensor))
+            val output = ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
 
             // Step 4: output analysis
             output.use {
