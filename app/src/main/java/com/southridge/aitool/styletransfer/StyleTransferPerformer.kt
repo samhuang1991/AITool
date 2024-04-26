@@ -92,7 +92,7 @@ internal class StyleTransferPerformer {
 
         // Resize the bitmap to the expected input size (e.g., 224x224)
         //宽度和高度从bitmap图片获取
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, true)
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width, bitmap.height, true)
 
         // Convert the resized bitmap to a float array
         val floatArray = bitmapToFloatArrayHWC(resizedBitmap)
@@ -103,7 +103,7 @@ internal class StyleTransferPerformer {
         floatBuffer.put(floatArray).flip()
 
         // Step 2: get the shape of the byte array and make ort tensor
-        val shape = longArrayOf(1, 640, 640, 3)
+        val shape = longArrayOf(1, bitmap.width.toLong(), bitmap.height.toLong(), 3)
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnv,
@@ -212,10 +212,8 @@ internal class StyleTransferPerformer {
         val width = data[0].size
         val height = data[0][0].size
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-
         for (y in 0 until height) {
             for (x in 0 until width) {
-
                 val r = (data[0][y][x][0] * 255).coerceIn(0f, 255f).toInt()
                 val g = (data[0][y][x][1] * 255).coerceIn(0f, 255f).toInt()
                 val b = (data[0][y][x][2] * 255).coerceIn(0f, 255f).toInt()

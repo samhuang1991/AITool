@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -50,6 +51,7 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     private lateinit var ortSession: OrtSession
     private var modelID: Int = R.raw.mosaic_8
     private val REQUEST_WRITE_STORAGE = 112
+    private var stylePosition: Int = 0
     override fun inflateBinding(inflater: LayoutInflater): ActivityTransferStyleBinding {
         return ActivityTransferStyleBinding.inflate(inflater)
     }
@@ -77,6 +79,7 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         binding.styleSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 modelID = styleFiles[position]
+                stylePosition = position
                 ortSession = ortEnv.createSession(readModel(), sessionOptions)
             }
 
@@ -155,9 +158,20 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
     private fun performStyleTransfer() {
         var styleTransferPerformer = StyleTransferPerformer()
-//        var result = styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
-        var result = styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
+
+        // 获取开始时间
+        val startTime = System.currentTimeMillis()
+        var result : Result = if (stylePosition> 9){
+            styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
+        }else{
+            styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
+        }
         updateUI(result);
+        // 获取结束时间并计算运行时间
+        val endTime = System.currentTimeMillis()
+        val runTime = endTime - startTime
+        // 显示运行时间
+        showToast("运行时间：$runTime 毫秒")
     }
 
     private fun readModel(): ByteArray {
@@ -167,10 +181,11 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
 
     private fun readInputImage(): InputStream {
-//        return assets.open("test_superresolution.png")
+        return assets.open("test_superresolution.png")
 //        return assets.open("gorilla.png")
 //        return assets.open("me.jpg")
-        return assets.open("tree.jpg")
+//        return assets.open("tree.jpg")
+//        return assets.open("wood_house.png")
     }
 
     private fun updateUI(result: Result) {
