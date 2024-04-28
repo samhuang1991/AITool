@@ -40,6 +40,10 @@ import com.southridge.aitool.databinding.ActivityTransferStyleBinding
 import com.southridge.aitool.superresolution.Result
 import com.southridge.aitool.superresolution.SuperResPerformer
 import com.southridge.aitool.ui.theme.AIToolTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -159,19 +163,32 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     private fun performStyleTransfer() {
         var styleTransferPerformer = StyleTransferPerformer()
 
-        // 获取开始时间
-        val startTime = System.currentTimeMillis()
-        var result : Result = if (stylePosition>= 5){
-            styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
-        }else{
-            styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
+        // 显示ProgressBar
+        binding.progressBar.visibility = View.VISIBLE
+
+        // 在后台线程中执行风格转换
+        GlobalScope.launch(Dispatchers.IO) {
+            // 获取开始时间
+            val startTime = System.currentTimeMillis()
+            var result : Result = if (stylePosition>= 5){
+                styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
+            }else{
+                styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
+            }
+
+            // 在主线程中更新UI
+            withContext(Dispatchers.Main) {
+                // 隐藏ProgressBar
+                binding.progressBar.visibility = View.GONE
+                updateUI(result)
+
+                // 获取结束时间并计算运行时间
+                val endTime = System.currentTimeMillis()
+                val runTime = endTime - startTime
+                // 显示运行时间
+                showToast("运行时间：$runTime 毫秒")
+            }
         }
-        updateUI(result)
-        // 获取结束时间并计算运行时间
-        val endTime = System.currentTimeMillis()
-        val runTime = endTime - startTime
-        // 显示运行时间
-        showToast("运行时间：$runTime 毫秒")
     }
 
     private fun readModel(): ByteArray {
@@ -184,9 +201,9 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 //        return assets.open("test_superresolution.png")
 //        return assets.open("gorilla.png")
 //        return assets.open("me.jpg")
-//        return assets.open("tree.jpg")
+        return assets.open("tree.jpg")
 //        return assets.open("wood_house.png")
-        return assets.open("road.jpg")
+//        return assets.open("road.jpg")
     }
 
     private fun updateUI(result: Result) {
