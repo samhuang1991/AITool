@@ -4,7 +4,16 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import kotlin.math.abs
 
+/**
+ * 这个对象包含了各种格式的Bitmap和FloatArray之间转换的实用函数。
+ */
 object BitmapUtils {
+
+    /**
+     * 将Bitmap转换为HWC格式的FloatArray。
+     * @param bitmap 要转换的Bitmap。
+     * @return 转换后的FloatArray。
+     */
     fun bitmapToFloatArrayHWC(bitmap: Bitmap): FloatArray {
         val width = bitmap.width
         val height = bitmap.height
@@ -30,6 +39,11 @@ object BitmapUtils {
         return floatArray
     }
 
+    /**
+     * 将Bitmap转换为WHC格式的FloatArray。
+     * @param bitmap 要转换的Bitmap。
+     * @return 转换后的FloatArray。
+     */
     fun bitmapToFloatArrayWHC(bitmap: Bitmap): FloatArray {
         val width = bitmap.width
         val height = bitmap.height
@@ -55,6 +69,11 @@ object BitmapUtils {
         return floatArray
     }
 
+    /**
+     * 将Bitmap转换为CHW格式的FloatArray。
+     * @param bitmap 要转换的Bitmap。
+     * @return 转换后的FloatArray。
+     */
     fun bitmapToFloatArrayCHW(bitmap: Bitmap): FloatArray {
         val width = bitmap.width
         val height = bitmap.height
@@ -84,6 +103,11 @@ object BitmapUtils {
         return floatArray
     }
 
+    /**
+     * 将CHW格式的FloatArray转换为Bitmap。
+     * @param data 要转换的FloatArray。
+     * @return 转换后的Bitmap。
+     */
     fun floatArrayCHWToBitmap(data: Array<Array<Array<FloatArray>>>): Bitmap {
         val width = data[0][0][0].size
         val height = data[0][0].size
@@ -110,6 +134,11 @@ object BitmapUtils {
         return bitmap
     }
 
+    /**
+     * 将HWC格式的FloatArray转换为Bitmap。
+     * @param data 要转换的FloatArray。
+     * @return 转换后的Bitmap。
+     */
     fun floatArrayHWCToBitmap(data: Array<Array<Array<FloatArray>>>): Bitmap {
         val width = data[0].size
         val height = data[0][0].size

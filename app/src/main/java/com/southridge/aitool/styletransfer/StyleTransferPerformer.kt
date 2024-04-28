@@ -1,6 +1,5 @@
 package com.southridge.aitool.styletransfer
 
-import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
@@ -57,7 +56,8 @@ internal class StyleTransferPerformer {
         )
         inputTensor.use {
             // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
+            val output =
+                ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
 
             // Step 4: output analysis
             output.use {
@@ -92,7 +92,7 @@ internal class StyleTransferPerformer {
 
         // Resize the bitmap to the expected input size (e.g., 224x224)
         //宽度和高度从bitmap图片获取
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width, bitmap.height, true)
+        val resizedBitmap = preprocessBitmap(bitmap)
 
         // Convert the resized bitmap to a float array
         val floatArray = bitmapToFloatArrayWHC(resizedBitmap)
@@ -103,7 +103,7 @@ internal class StyleTransferPerformer {
         floatBuffer.put(floatArray).flip()
 
         // Step 2: get the shape of the byte array and make ort tensor
-        val shape = longArrayOf(1, bitmap.width.toLong(), bitmap.height.toLong(), 3)
+        val shape = longArrayOf(1, resizedBitmap.width.toLong(), resizedBitmap.height.toLong(), 3)
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnv,
@@ -112,7 +112,8 @@ internal class StyleTransferPerformer {
         )
         inputTensor.use {
             // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
+            val output =
+                ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
 
             // Step 4: output analysis
             output.use {
@@ -129,6 +130,18 @@ internal class StyleTransferPerformer {
     }
 
 
+    private fun preprocessBitmap(bitmap: Bitmap): Bitmap {
+        var h = bitmap.height
+        var w = bitmap.width
+
+        val x = h % 32
+        h -= x
+
+        val y = w % 32
+        w -= y
+
+        return Bitmap.createScaledBitmap(bitmap, w, h, true)
+    }
 
 
 }
