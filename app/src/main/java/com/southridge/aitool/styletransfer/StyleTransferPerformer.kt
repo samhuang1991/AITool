@@ -6,15 +6,15 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.util.Log
+import com.southridge.aitool.utils.BitmapUtils.bitmapToFloatArrayCHW
+import com.southridge.aitool.utils.BitmapUtils.bitmapToFloatArrayWHC
+import com.southridge.aitool.utils.BitmapUtils.floatArrayCHWToBitmap
+import com.southridge.aitool.utils.BitmapUtils.floatArrayHWCToBitmap
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.FloatBuffer
 import java.util.Collections
-import kotlin.math.abs
-import kotlin.math.log
+
 
 internal data class Result(
     var outputBitmap: Bitmap? = null
@@ -36,7 +36,7 @@ internal class StyleTransferPerformer {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
 
         // Convert the resized bitmap to a float array
-        val floatArray = bitmapToFloatArray(resizedBitmap)
+        val floatArray = bitmapToFloatArrayCHW(resizedBitmap)
 
         // Convert float array to FloatBuffer
 //        val floatBuffer = FloatBuffer.allocate(floatArray.size)
@@ -57,7 +57,7 @@ internal class StyleTransferPerformer {
         )
         inputTensor.use {
             // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap("input1", inputTensor))
+            val output = ortSession.run(Collections.singletonMap(ortSession.inputNames.first(), inputTensor))
 
             // Step 4: output analysis
             output.use {
@@ -67,7 +67,7 @@ internal class StyleTransferPerformer {
 
                 val rawOutput = (output?.get(0)?.value) as Array<Array<Array<FloatArray>>>
 
-                val outputImageBitmap = floatArrayToBitmap(rawOutput)
+                val outputImageBitmap = floatArrayCHWToBitmap(rawOutput)
 
                 // Step 5: set output result
                 result.outputBitmap = outputImageBitmap
@@ -95,7 +95,7 @@ internal class StyleTransferPerformer {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width, bitmap.height, true)
 
         // Convert the resized bitmap to a float array
-        val floatArray = bitmapToFloatArrayHWC(resizedBitmap)
+        val floatArray = bitmapToFloatArrayWHC(resizedBitmap)
 
         val floatBuffer =
             ByteBuffer.allocateDirect(floatArray.size * 4).order(ByteOrder.nativeOrder())
@@ -119,7 +119,7 @@ internal class StyleTransferPerformer {
 
                 val rawOutput = (output?.get(0)?.value) as Array<Array<Array<FloatArray>>>
 
-                val outputImageBitmap = floatArrayToBitmap2(rawOutput)
+                val outputImageBitmap = floatArrayHWCToBitmap(rawOutput)
 
                 // Step 5: set output result
                 result.outputBitmap = outputImageBitmap
@@ -128,99 +128,7 @@ internal class StyleTransferPerformer {
         return result
     }
 
-    private fun bitmapToFloatArrayHWC(bitmap: Bitmap): FloatArray {
-        val width = bitmap.width
-        val height = bitmap.height
-        val floatArray = FloatArray(1 * 3 * width * height)
 
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                val pixel = bitmap.getPixel(x, y)
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
 
-                val rFloat = r.toFloat() / 255.0f
-                val gFloat = g.toFloat() / 255.0f
-                val bFloat = b.toFloat() / 255.0f
-
-                val index = (y * width + x) * 3
-                floatArray[index] = rFloat
-                floatArray[index + 1] = gFloat
-                floatArray[index + 2] = bFloat
-            }
-        }
-        return floatArray
-    }
-
-    private fun bitmapToFloatArray(bitmap: Bitmap): FloatArray {
-        val width = bitmap.width
-        val height = bitmap.height
-        val floatArray = FloatArray(1 * 3 * width * height)
-
-        // 遍历Bitmap的每个像素
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                val pixel = bitmap.getPixel(x, y)
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
-
-                // 将0-255的整数转换为0.0-1.0的浮点数
-                val rFloat = r.toFloat() / 255.0f
-                val gFloat = g.toFloat() / 255.0f
-                val bFloat = b.toFloat() / 255.0f
-
-                // 将浮点数存储到floatArray中，按照CHW格式
-                val index = y * width + x
-                floatArray[index] = rFloat
-                floatArray[index + width * height] = gFloat
-                floatArray[index + 2 * width * height] = bFloat
-            }
-        }
-
-        return floatArray
-    }
-
-    private fun floatArrayToBitmap(data: Array<Array<Array<FloatArray>>>): Bitmap {
-        val width = data[0][0][0].size
-        val height = data[0][0].size
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-
-        for (i in 0 until height) {
-            for (j in 0 until width) {
-                var r = abs(data[0][0][i][j] * 1).toInt()
-                var g = abs(data[0][1][i][j] * 1).toInt()
-                var b = abs(data[0][2][i][j] * 1).toInt()
-                if (r>255 ){
-                    r = 255
-                }
-                if (g>255){
-                    g = 255
-                }
-                if (b>255){
-                    b = 255
-                }
-                bitmap.setPixel(j, i, Color.rgb(r, g, b))
-//                Log.i("output: ", "r = $r , g = $g , b = $b")
-            }
-        }
-        return bitmap
-    }
-
-    private fun floatArrayToBitmap2(data: Array<Array<Array<FloatArray>>>): Bitmap {
-        val width = data[0].size
-        val height = data[0][0].size
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                val r = (data[0][y][x][0] * 255).coerceIn(0f, 255f).toInt()
-                val g = (data[0][y][x][1] * 255).coerceIn(0f, 255f).toInt()
-                val b = (data[0][y][x][2] * 255).coerceIn(0f, 255f).toInt()
-                bitmap.setPixel(x, y, Color.rgb(r, g, b))
-            }
-        }
-        return bitmap
-    }
 
 }

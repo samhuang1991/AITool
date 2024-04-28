@@ -161,12 +161,12 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
         // 获取开始时间
         val startTime = System.currentTimeMillis()
-        var result : Result = if (stylePosition> 9){
+        var result : Result = if (stylePosition>= 5){
             styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
         }else{
             styleTransferPerformer.performStyleTransfer(readInputImage(), ortEnv, ortSession)
         }
-        updateUI(result);
+        updateUI(result)
         // 获取结束时间并计算运行时间
         val endTime = System.currentTimeMillis()
         val runTime = endTime - startTime
@@ -181,8 +181,8 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
 
     private fun readInputImage(): InputStream {
-        return assets.open("test_superresolution.png")
-//        return assets.open("gorilla.png")
+//        return assets.open("test_superresolution.png")
+        return assets.open("gorilla.png")
 //        return assets.open("me.jpg")
 //        return assets.open("tree.jpg")
 //        return assets.open("wood_house.png")
@@ -203,15 +203,10 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
     private val styleFiles = intArrayOf(
         R.raw.mosaic_8,
-        R.raw.mosaic_9,
         R.raw.udnie_8,
-        R.raw.udnie_9,
         R.raw.candy_8,
-        R.raw.candy_9,
         R.raw.rain_princess_8,
-        R.raw.rain_princess_9,
         R.raw.pointilism_8,
-        R.raw.pointilism_9,
         R.raw.animeganv3_hayao_36,
         R.raw.shinkai_53
     )
