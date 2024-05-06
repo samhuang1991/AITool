@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.databinding.DataBindingUtil.setContentView
+import com.southridge.aitool.cartoon.PhotoToCartoonActivity
 import com.southridge.aitool.databinding.ActivityMainBinding
 import com.southridge.aitool.styletransfer.StyleTransferActivity
 import com.southridge.aitool.superresolution.SuperResolutionActivity
@@ -53,6 +54,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         binding.styleTransfer.setOnClickListener {
              startActivity(Intent(this,StyleTransferActivity::class.java))
+        }
+
+        binding.cartoonTransfer.setOnClickListener {
+             startActivity(Intent(this, PhotoToCartoonActivity::class.java))
         }
     }
 

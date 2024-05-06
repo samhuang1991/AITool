@@ -170,6 +170,7 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         GlobalScope.launch(Dispatchers.IO) {
             // 获取开始时间
             val startTime = System.currentTimeMillis()
+
             var result : Result = if (stylePosition>= 5){
                 styleTransferPerformer.performStyleTransfer2(readInputImage(), ortEnv, ortSession)
             }else{

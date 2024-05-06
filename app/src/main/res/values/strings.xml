@@ -17,5 +17,10 @@
         <item>pointilism_8</item>
         <item>hayao</item>
         <item>shinkai_53</item>
+        <item>photo2cartoon_weights</item>
+    </string-array>
+
+    <string-array name="CartoonStyles">
+        <item>photo2cartoon_weights</item>
     </string-array>
 </resources>
