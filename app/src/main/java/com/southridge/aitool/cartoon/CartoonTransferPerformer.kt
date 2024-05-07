@@ -105,4 +105,33 @@ internal class CartoonTransferPerformer{
         return bitmap
     }
 
+
+    fun bitmapToFloatArrayCHW(bitmap: Bitmap): FloatArray {
+        val width = bitmap.width
+        val height = bitmap.height
+        val floatArray = FloatArray(1 * 3 * width * height)
+
+        // 遍历Bitmap的每个像素
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val pixel = bitmap.getPixel(x, y)
+                val r = Color.red(pixel)
+                val g = Color.green(pixel)
+                val b = Color.blue(pixel)
+
+                // 将0-255的整数转换为0.0-1.0的浮点数
+                val rFloat = r.toFloat() / 255.0f
+                val gFloat = g.toFloat() / 255.0f
+                val bFloat = b.toFloat() / 255.0f
+
+                // 将浮点数存储到floatArray中，按照CHW格式
+                val index = y * width + x
+                floatArray[index] = rFloat
+                floatArray[index + width * height] = gFloat
+                floatArray[index + 2 * width * height] = bFloat
+            }
+        }
+
+        return floatArray
+    }
 }

@@ -4,6 +4,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -28,8 +29,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.databinding.DataBindingUtil.setContentView
 import com.southridge.aitool.BaseActivity
@@ -44,6 +47,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -54,8 +59,14 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
     private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
     private lateinit var ortSession: OrtSession
     private var modelID: Int = R.raw.mosaic_8
-    private val REQUEST_WRITE_STORAGE = 112
     private var stylePosition: Int = 0
+    companion object {
+        const val IMAGE_PICK_CODE = 1000
+        const val PERMISSION_CODE = 1001
+        const val REQUEST_WRITE_STORAGE = 112
+        const val IMAGE_NAME = "road.jpg"
+    }
+
     override fun inflateBinding(inflater: LayoutInflater): ActivityTransferStyleBinding {
         return ActivityTransferStyleBinding.inflate(inflater)
     }
@@ -69,8 +80,21 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         ortSession = ortEnv.createSession(readModel(), sessionOptions)
 
         binding.imageView1.setImageBitmap(
-            BitmapFactory.decodeStream(readInputImage())
-        );
+            BitmapFactory.decodeStream(assets.open(IMAGE_NAME))
+        )
+
+        //获取宽高
+        binding.sizeTextView.text = "${binding.imageView1.drawable.intrinsicWidth} x ${binding.imageView1.drawable.intrinsicHeight}"
+
+        binding.imageView1.setOnClickListener {
+            //TODO 选择图片
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                requestPermissions(permissions, PERMISSION_CODE)
+            } else {
+                pickImageFromGallery()
+            }
+        }
 
         binding.styleTransferButton.setOnClickListener {
             try {
@@ -108,6 +132,12 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
     }
 
+    private fun pickImageFromGallery() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent, IMAGE_PICK_CODE)
+    }
+
     /**
      * 保存图片到手机相册
      */
@@ -142,23 +172,44 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         }
     }
 
-
+    @SuppressLint("SetTextI18n")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK && requestCode == IMAGE_PICK_CODE) {
+            binding.imageView1.setImageURI(data?.data)
+            //获取宽高
+            binding.sizeTextView.text = "${binding.imageView1.drawable.intrinsicWidth} x ${binding.imageView1.drawable.intrinsicHeight}"
+        }
+    }
 
     // 权限请求的回调
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             REQUEST_WRITE_STORAGE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // 权限被用户授予，保存图片
+                if (hasWriteExternalStoragePermission()) {
                     saveImageToGallery()
                 } else {
-                    // 权限被用户拒绝，你可以在这里给出一些提示
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+            PERMISSION_CODE -> {
+                if (hasReadExternalStoragePermission()) {
+                    pickImageFromGallery()
+                } else {
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
+    private fun hasWriteExternalStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun hasReadExternalStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+    }
 
     private fun performStyleTransfer() {
         var styleTransferPerformer = StyleTransferPerformer()
@@ -199,12 +250,11 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
 
 
     private fun readInputImage(): InputStream {
-//        return assets.open("test_superresolution.png")
-//        return assets.open("gorilla.png")
-//        return assets.open("me.jpg")
-        return assets.open("tree.jpg")
-//        return assets.open("wood_house.png")
-//        return assets.open("road.jpg")
+        val bitmap = (binding.imageView1.drawable as BitmapDrawable).bitmap
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        return ByteArrayInputStream(byteArray)
     }
 
     private fun updateUI(result: Result) {
@@ -215,9 +265,6 @@ class StyleTransferActivity : BaseActivity<ActivityTransferStyleBinding>() {
         super.onDestroy()
         ortEnv.close()
         ortSession.close()
-    }
-    companion object {
-        const val TAG = "ORTSuperResolution"
     }
 
     private val styleFiles = intArrayOf(

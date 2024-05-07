@@ -4,6 +4,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.extensions.OrtxPackage
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,15 +16,23 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.southridge.aitool.BaseActivity
 import com.southridge.aitool.R
 import com.southridge.aitool.databinding.ActivityPhotoToCartoonBinding
+import com.southridge.aitool.styletransfer.StyleTransferActivity
+import com.southridge.aitool.styletransfer.StyleTransferActivity.Companion.PERMISSION_CODE
 import com.southridge.aitool.superresolution.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -32,8 +41,13 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
     private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
     private lateinit var ortSession: OrtSession
     private var modelID: Int = R.raw.photo2cartoon_weights
-    private val REQUEST_WRITE_STORAGE = 112
     private var stylePosition: Int = 0
+    companion object {
+        const val IMAGE_PICK_CODE = 1000
+        const val PERMISSION_CODE = 1001
+        const val REQUEST_WRITE_STORAGE = 112
+        const val IMAGE_NAME = "road.jpg"
+    }
     override fun inflateBinding(inflater: LayoutInflater): ActivityPhotoToCartoonBinding {
         return ActivityPhotoToCartoonBinding.inflate(inflater)
     }
@@ -47,8 +61,21 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
         ortSession = ortEnv.createSession(readModel(), sessionOptions)
 
         binding.imageView1.setImageBitmap(
-            BitmapFactory.decodeStream(readInputImage())
+            BitmapFactory.decodeStream(assets.open(IMAGE_NAME))
         )
+
+        //获取宽高
+        binding.sizeTextView.text = "${binding.imageView1.drawable.intrinsicWidth} x ${binding.imageView1.drawable.intrinsicHeight}"
+
+        binding.imageView1.setOnClickListener {
+            //TODO 选择图片
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                requestPermissions(permissions, PERMISSION_CODE)
+            } else {
+                pickImageFromGallery()
+            }
+        }
 
         binding.styleTransferButton.setOnClickListener {
             try {
@@ -86,6 +113,13 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
 
     }
 
+    private fun pickImageFromGallery() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent, StyleTransferActivity.IMAGE_PICK_CODE)
+    }
+
+
     /**
      * 保存图片到手机相册
      */
@@ -121,20 +155,43 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
     }
 
 
+    @SuppressLint("SetTextI18n")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK && requestCode == StyleTransferActivity.IMAGE_PICK_CODE) {
+            binding.imageView1.setImageURI(data?.data)
+            //获取宽高
+            binding.sizeTextView.text = "${binding.imageView1.drawable.intrinsicWidth} x ${binding.imageView1.drawable.intrinsicHeight}"
+        }
+    }
 
     // 权限请求的回调
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            REQUEST_WRITE_STORAGE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // 权限被用户授予，保存图片
+            StyleTransferActivity.REQUEST_WRITE_STORAGE -> {
+                if (hasWriteExternalStoragePermission()) {
                     saveImageToGallery()
                 } else {
-                    // 权限被用户拒绝，可以在这里给出一些提示
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+            StyleTransferActivity.PERMISSION_CODE -> {
+                if (hasReadExternalStoragePermission()) {
+                    pickImageFromGallery()
+                } else {
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
                 }
             }
         }
+    }
+
+    private fun hasWriteExternalStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun hasReadExternalStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
     }
 
 
@@ -173,14 +230,12 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
 
 
     private fun readInputImage(): InputStream {
-//        return assets.open("test_superresolution.png")
-//        return assets.open("gorilla.png")
-        return assets.open("cartoon_test.jpg")
-//        return assets.open("man.png")
-//        return assets.open("boat.jpg")
-//        return assets.open("boat.jpg")
-//        return assets.open("wood_house.png")
-//        return assets.open("road.jpg")
+        //从imageView1中获取InputStream图片返回
+        val bitmap = (binding.imageView1.drawable as BitmapDrawable).bitmap
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        return ByteArrayInputStream(byteArray)
     }
 
     private fun updateUI(result: Result) {
@@ -192,15 +247,13 @@ class PhotoToCartoonActivity : BaseActivity<ActivityPhotoToCartoonBinding>() {
         ortEnv.close()
         ortSession.close()
     }
-    companion object {
-        const val TAG = "PhotoToCartoonActivity"
-    }
 
     private val styleFiles = intArrayOf(
 //        R.raw.photo2cartoon_weights
 //        R.raw.face_paint_512_v2
 //        R.raw.generator_celeba_distill
 //        R.raw.face_paint_1024_v2
-        R.raw.generator_celeba_distill_1024
+//        R.raw.generator_celeba_distill_1024
+        R.raw.generator_paprika_1024
     )
 }
